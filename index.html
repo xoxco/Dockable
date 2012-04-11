@@ -1,0 +1,233 @@
+
+<head>
+<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+<script>
+	(function($) {
+		var PILES = [];
+		var INTERVAL = null;
+		var LAST_SCROLL = null;				
+		$.fn.redock = function() {
+
+				top_of_screen = $(window).scrollTop();
+				if (top_of_screen == LAST_SCROLL) {
+					return;
+				}
+				LAST_SCROLL = top_of_screen;
+
+				$('.dockable-processed').each(function() {
+					settings = $(this).data('settings');
+
+					if ((top_of_screen+PILES[settings.pid].stack_height) >= ($(this).data('y')) ) {
+						if (!$(this).hasClass('docked')) { 
+							$(this).data('ph',$('<div class="placeholder" style="height: ' + $(this).outerHeight() + 'px; width: ' + $(this).width() + 'px;"></div>').insertAfter(this));
+							$(this).addClass('docked');
+							$(this).data('orig-position',$(this).css('position'));
+							$(this).css('position','fixed');
+							if (settings.style=='stack') {
+								$(this).css('top',(PILES[settings.pid].stack_height)+'px');
+								$(this).data('stacked',PILES[settings.pid].stack_height);
+								PILES[settings.pid].stack_height += $(this).outerHeight() + settings.margin;
+							}
+							if (settings.style=='dock') {
+								
+								// slide up previous items
+								$('.foo').css('top','-100px');
+								// dock THIS item
+								$(this).css('top',(settings.top)+'px');
+								$(this).addClass('foo');
+								$(this).data('stacked',PILES[settings.pid].stack_height);
+								PILES[settings.pid].stack_height = $(this).outerHeight() + settings.top;
+																
+							}
+						}
+					}
+					if (top_of_screen < ($(this).data('y')-$(this).data('stacked')) ) {
+						if ($(this).hasClass('docked')) {
+							if (settings.style=='stack') {
+								PILES[settings.pid].stack_height -= $(this).outerHeight() + settings.margin;
+							}
+							if (settings.style=='dock') {
+								$(this).css('top','0px');	
+								$(this).removeClass('foo');
+								if ($('.foo').length==0) {
+									PILES[settings.pid].stack_height = settings.top;
+								} else {
+									$('.foo').eq($('.foo').length-1).css('top','0px');
+								}
+							}
+							$(this).removeClass('docked');
+							$(this).css('position',$(this).data('orig-position'));
+							$($(this).data('ph')).remove();
+						}
+					}
+				
+				});
+			}
+		
+		$.fn.dockable = function(options) {
+			options = $.extend({offset:0,margin:0,style:'stack'},options);
+			
+			pid = PILES.length;
+			options.pid = pid;
+			PILES[pid] = options;
+			PILES[pid].top = PILES[pid].stack_height = options.offset;
+
+			this.each(function() {
+				$(this).data('settings',options);
+				$(this).data('y',$(this).position().top);
+				$(this).addClass('dockable-processed');
+			});
+		
+			
+			
+<!--
+			$(window).scroll(function() {
+				$(window).redock();
+			});
+-->
+			 
+			 if (!INTERVAL) {
+			 	console.log("Setting interval");
+			 	INTERVAL = setInterval(function(){$(window).redock();},100);
+			 }
+		
+		}
+	
+	
+	})(jQuery);
+
+	
+	$().ready(function() {
+	
+		$('.dock').dockable();
+		$('.stacker').dockable({style: 'dock',margin:10});
+
+	});
+
+
+
+</script>
+<style>
+	#main { float: left; width: 600px;}
+	#sidebar { float: left; margin-left:20px;}
+	
+	.stacker {
+		width: 600px;
+		min-height: 5px;
+		background:rgba(200,200,200,1);
+		-webkit-transition: all linear 0.25s;
+	}
+	.stacker a {
+		display:block;
+
+		padding:10px;
+
+	}
+	.stacker.docked {
+		background:rgba(200,200,200,0.25);
+	}
+	.stacker.docked a {
+		display:block;
+		text-decoration:underline;
+		padding:10px;
+	}
+
+	.dock { 
+		width: 200px;
+		height: 100px;
+		padding:5px;
+		box-shadow: 0px 2px 2px rgba(0,0,0,0.5);
+
+	}	
+		
+	.dock.docked {
+		box-shadow: none;
+	}
+	body { height: 1000px;}
+
+
+	#a { 
+		background: #00aeef;	
+	}
+	#b { 
+		background: #44c8f5;	
+	}
+	#c { 
+		background: #aae1fa;	
+	}
+	#d { 
+		background: #f287b7;	
+	}
+	#e { 
+		background: #ec008c;	
+	}
+
+</style>
+</head>
+<body>
+<!--
+x	#00aeef
+o	#44c8f5
+x	#aae1fa
+c	#f287b7
+o	#ec008c	
+-->
+
+
+
+	<div id="main">
+	<h1 id="top">This is an example of the new jQuery Dockable plugin.</h1>
+		
+	<p>It allows you to dock certain elements to the top of the screen…</p>
+	
+	<div class="stacker">
+		<a href="#top">Back to Intro</a>
+	</div>
+	
+	<p id="scrollback">AND let them stack up…</p>
+
+	<p>So that the most important parts of your site…</p>
+
+	<div class="stacker">
+		<a href="#scrollback">Back to Explanation</a>
+	</div>
+
+	<p>Stay in view.</p>
+
+
+	</div>
+	<div id="sidebar">
+		<div id="a" class="dock">
+		X
+	</div>
+	<p>Here's some more stuff</p>
+	<p>Here's some more stuff</p>
+
+
+	<div id="b"  class="dock">
+		O
+	</div>
+	<p>Here's some more stuff</p>
+	<p>Here's some more stuff</p>
+
+
+	<div id="c"  class="dock">
+		X
+	</div>
+
+	<p>Here's some more stuff</p>
+	<p>Here's some more stuff</p>
+
+	<div id="d"  class="dock">
+		C
+	</div>
+
+	<p>Here's some more stuff</p>
+	<p>Here's some more stuff</p>
+
+	<div id="e"  class="dock">
+		O
+	</div>
+	
+	</div>
+</body>
